@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
@@ -22,12 +23,15 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'f5aapeopl0=s&st5z0c3xai-*(_&r&k*4y9q*o2qtpvt09avgg'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 587
+
+# SECURITY WARNING: don't run with debug turned on in production!
+if os.environ.get('ENV') == 'PRODUCTION':
+    DEBUG = False
+else:
+    DEBUG = True
+
+ALLOWED_HOSTS = ['bissaye.herokuapp.com']
 
 # Application definition
 
@@ -50,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'bissaye.urls'
@@ -78,8 +83,12 @@ WSGI_APPLICATION = 'bissaye.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'bissaye_blog',
+        'USER': 'postgres',
+        'PASSWORD': '35532',
+        'HOST': '',
+        'PORT': '5432',
     }
 }
 
@@ -121,9 +130,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-MEDIA_URL = '/images/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
-]
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'static/images')
+INTERNAL_IPS = ['127.0.0.1']
+if os.environ.get('ENV') == 'PRODUCTION':
+
+    PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+    STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
+    STATICFILES_DIRS =(
+        os.path.join(PROJECT_ROOT, 'static')
+    )
+
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressdManifestStaticFilesStorage'
+    db_from_env = dj_database_url.config(conn_max_age=500)
+    DATABASES[ 'default'].update(db_from_env)
